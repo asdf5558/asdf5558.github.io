@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文字随机抽取与角色分配游戏</title>
+    <title>三国乱斗</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -570,18 +570,25 @@
             // 显示初始文本
             textDisplay.textContent = "点击「开始随机」按钮开始";
         }
-        
-        // 从本地存储加载文本库
         function loadTextLibrary() {
-            const savedLibrary = localStorage.getItem('textLibrary');
-            if (savedLibrary) {
-                textLibrary = JSON.parse(savedLibrary);
+            try {
+                const savedLibrary = localStorage.getItem('textLibrary');
+                if (savedLibrary) {
+                    textLibrary = JSON.parse(savedLibrary);
+                }
+            } catch (e) {
+            console.warn('读取本地存储失败', e);
             }
         }
-        
-        // 保存文本库到本地存储
+        // 保存文本库到本地存储（增强容错）
         function saveTextLibraryToStorage() {
-            localStorage.setItem('textLibrary', JSON.stringify(textLibrary));
+            try {
+                localStorage.setItem('textLibrary', JSON.stringify(textLibrary));
+            } catch (e) {
+                console.warn('本地存储写入失败，可能处于隐私模式', e);
+                // 可选的友好提示
+                showNotification('当前浏览器不支持本地存储，文本库将不会被保存', true);
+            }
         }
         
         // 初始化角色表格
@@ -817,4 +824,5 @@
         document.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
+
 </html>
