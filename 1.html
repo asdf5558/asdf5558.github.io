@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字随机抽取与角色分配游戏</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e1e5eb;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .control-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e1e5eb;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #3498db;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+        
+        .section-title i {
+            font-size: 1.6rem;
+        }
+        
+        .random-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        
+        #randomButton {
+            padding: 15px 35px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            color: white;
+            min-width: 200px;
+        }
+        
+        #randomButton:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        #randomButton:active {
+            transform: translateY(1px);
+        }
+        
+        #randomButton.stopped {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+        }
+        
+        #textDisplay {
+            padding: 20px;
+            font-size: 1.8rem;
+            text-align: center;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            border: 2px dashed #bdc3c7;
+            min-height: 80px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        #textDisplay.jumping {
+            border-color: #3498db;
+            background-color: #ebf5fb;
+            color: #2980b9;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+        }
+        
+        .table-section {
+            overflow-x: auto;
+        }
+        
+        .role-table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .role-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .role-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e1e5eb;
+        }
+        
+        .role-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .role-table tr:hover {
+            background-color: #e8f4fc;
+        }
+        
+        .role-table input {
+            width: 100%;
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        .role-table input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .fixed-role {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .action-section {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        #copyButton {
+            padding: 16px 45px;
+            font-size: 1.3rem;
+            background: linear-gradient(to right, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+        }
+        
+        #copyButton:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(155, 89, 182, 0.4);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            padding: 25px;
+            background: linear-gradient(to right, #2c3e50, #34495e);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .text-library-container {
+            padding: 25px;
+        }
+        
+        .text-library {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .text-library th {
+            background-color: #ecf0f1;
+            padding: 18px 15px;
+            text-align: left;
+            color: #2c3e50;
+            border-bottom: 2px solid #bdc3c7;
+        }
+        
+        .text-library td {
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .text-library input {
+            width: 100%;
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .add-row-btn {
+            display: block;
+            margin: 20px auto 10px;
+            padding: 12px 25px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .add-row-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: #2ecc71;
+            color: white;
+            padding: 18px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1001;
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+        }
+        
+        .instructions {
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 25px;
+        }
+        
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .control-section {
+                padding: 20px;
+            }
+            
+            .role-table th, .role-table td {
+                padding: 12px 8px;
+            }
+            
+            #randomButton, #copyButton {
+                padding: 14px 25px;
+                font-size: 1.1rem;
+            }
+            
+            #textDisplay {
+                font-size: 1.5rem;
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .random-display {
+                gap: 15px;
+            }
+            
+            .role-table {
+                font-size: 0.9rem;
+            }
+            
+            .section-title {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-gamepad"></i> 文字随机抽取与角色分配游戏</h1>
+        <p>随机抽取文本并分配角色信息，支持数据复制和文本库管理</p>
+    </div>
+    
+    <div class="game-container">
+        <!-- 随机抽取控制区 -->
+        <div class="control-section">
+            <div class="section-title">
+                <i class="fas fa-random"></i>
+                <h2>随机文本抽取</h2>
+            </div>
+            
+            <div class="random-display">
+                <button id="randomButton">开始随机</button>
+                <div id="textDisplay">等待开始...</div>
+            </div>
+        </div>
+        
+        <!-- 角色信息输入表格 -->
+        <div class="control-section">
+            <div class="section-title">
+                <i class="fas fa-table"></i>
+                <h2>角色信息分配</h2>
+            </div>
+            
+            <div class="table-section">
+                <table class="role-table">
+                    <thead>
+                        <tr>
+                            <th width="30%">角色</th>
+                            <th width="35%">第二列信息</th>
+                            <th width="35%">第三列信息</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roleTableBody">
+                        <!-- 行将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="instructions">
+                <h3><i class="fas fa-lightbulb"></i> 使用提示</h3>
+                <ul>
+                    <li>在第二、三列中输入角色对应的信息</li>
+                    <li>如果第二列和第三列都输入"1"，点击"复制以上"按钮后将打开文本库管理页面</li>
+                    <li>点击"复制以上"按钮可将表格内容复制到剪贴板，可直接粘贴到Excel中</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="action-section">
+            <button id="copyButton">
+                <i class="far fa-copy"></i> 复制以上
+            </button>
+        </div>
+    </div>
+    
+    <!-- 文本库管理模态框 -->
+    <div id="textLibraryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-database"></i> 文本库管理</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="text-library-container">
+                <p>在此编辑文本库内容，游戏中的随机文本将从此处抽取。每行一个文本项。</p>
+                
+                <table class="text-library">
+                    <thead>
+                        <tr>
+                            <th width="10%">序号</th>
+                            <th width="90%">文本内容</th>
+                        </tr>
+                    </thead>
+                    <tbody id="textLibraryBody">
+                        <!-- 文本库行将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+                
+                <button id="addTextRow" class="add-row-btn">
+                    <i class="fas fa-plus"></i> 添加新行
+                </button>
+                
+                <div style="display: flex; gap: 15px; margin-top: 30px;">
+                    <button id="saveTextLibrary" style="flex: 1; padding: 15px; background-color: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem;">
+                        <i class="fas fa-save"></i> 保存文本库
+                    </button>
+                    <button id="closeModalBtn" style="flex: 1; padding: 15px; background-color: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem;">
+                        <i class="fas fa-times"></i> 关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知消息 -->
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">操作成功！</span>
+    </div>
+
+    <script>
+        // 游戏状态变量
+        let isRandomizing = false;
+        let randomInterval = null;
+        let currentTextIndex = -1;
+        
+        // 默认文本库
+        let textLibrary = [
+            "运筹帷幄之中，决胜千里之外",
+            "兵者，诡道也",
+            "知己知彼，百战不殆",
+            "攻其不备，出其不意",
+            "上兵伐谋，其次伐交",
+            "兵无常势，水无常形",
+            "置之死地而后生",
+            "不战而屈人之兵",
+            "以逸待劳，以静制动",
+            "风声鹤唳，草木皆兵",
+            "明修栈道，暗度陈仓",
+            "擒贼先擒王",
+            "三十六计，走为上计",
+            "养兵千日，用兵一时",
+            "将在外，君命有所不受"
+        ];
+        
+        // 固定角色列表
+        const fixedRoles = [
+            "主公", "军师", "大将军", "内政", 
+            "陆军统领", "陆军参谋", "水军统领", 
+            "水军参谋", "奇兵", "内奸"
+        ];
+        
+        // DOM元素
+        const randomButton = document.getElementById('randomButton');
+        const textDisplay = document.getElementById('textDisplay');
+        const roleTableBody = document.getElementById('roleTableBody');
+        const copyButton = document.getElementById('copyButton');
+        const textLibraryModal = document.getElementById('textLibraryModal');
+        const textLibraryBody = document.getElementById('textLibraryBody');
+        const addTextRowBtn = document.getElementById('addTextRow');
+        const saveTextLibraryBtn = document.getElementById('saveTextLibrary');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalButtons = document.querySelectorAll('.close-modal');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        
+        // 初始化函数
+        function initGame() {
+            // 从本地存储加载文本库
+            loadTextLibrary();
+            
+            // 初始化角色表格
+            initRoleTable();
+            
+            // 初始化文本库表格
+            initTextLibraryTable();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 显示初始文本
+            textDisplay.textContent = "点击「开始随机」按钮开始";
+        }
+        
+        // 从本地存储加载文本库
+        function loadTextLibrary() {
+            const savedLibrary = localStorage.getItem('textLibrary');
+            if (savedLibrary) {
+                textLibrary = JSON.parse(savedLibrary);
+            }
+        }
+        
+        // 保存文本库到本地存储
+        function saveTextLibraryToStorage() {
+            localStorage.setItem('textLibrary', JSON.stringify(textLibrary));
+        }
+        
+        // 初始化角色表格
+        function initRoleTable() {
+            roleTableBody.innerHTML = '';
+            
+            fixedRoles.forEach((role, index) => {
+                const row = document.createElement('tr');
+                
+                // 第一列：固定角色
+                const roleCell = document.createElement('td');
+                roleCell.className = 'fixed-role';
+                roleCell.textContent = role;
+                
+                // 第二列：用户输入
+                const input1Cell = document.createElement('td');
+                const input1 = document.createElement('input');
+                input1.type = 'text';
+                input1.placeholder = '输入信息...';
+                input1.id = `role-${index}-col2`;
+                input1Cell.appendChild(input1);
+                
+                // 第三列：用户输入
+                const input2Cell = document.createElement('td');
+                const input2 = document.createElement('input');
+                input2.type = 'text';
+                input2.placeholder = '输入信息...';
+                input2.id = `role-${index}-col3`;
+                input2Cell.appendChild(input2);
+                
+                row.appendChild(roleCell);
+                row.appendChild(input1Cell);
+                row.appendChild(input2Cell);
+                
+                roleTableBody.appendChild(row);
+            });
+        }
+        
+        // 初始化文本库表格
+        function initTextLibraryTable() {
+            textLibraryBody.innerHTML = '';
+            
+            textLibrary.forEach((text, index) => {
+                addTextLibraryRow(index, text);
+            });
+        }
+        
+        // 添加文本库行
+        function addTextLibraryRow(index, text = '') {
+            const row = document.createElement('tr');
+            
+            // 序号列
+            const indexCell = document.createElement('td');
+            indexCell.textContent = index + 1;
+            
+            // 文本内容列
+            const textCell = document.createElement('td');
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.value = text;
+            textInput.placeholder = '输入文本内容...';
+            textInput.dataset.index = index;
+            textInput.addEventListener('input', function() {
+                textLibrary[index] = this.value;
+            });
+            
+            textCell.appendChild(textInput);
+            row.appendChild(indexCell);
+            row.appendChild(textCell);
+            
+            textLibraryBody.appendChild(row);
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 随机按钮点击事件
+            randomButton.addEventListener('click', toggleRandomize);
+            
+            // 复制按钮点击事件
+            copyButton.addEventListener('click', copyTableData);
+            
+            // 添加文本库行按钮
+            addTextRowBtn.addEventListener('click', function() {
+                textLibrary.push('');
+                addTextLibraryRow(textLibrary.length - 1, '');
+            });
+            
+            // 保存文本库按钮
+            saveTextLibraryBtn.addEventListener('click', function() {
+                saveTextLibraryToStorage();
+                showNotification('文本库保存成功！');
+            });
+            
+            // 关闭模态框按钮
+            closeModalBtn.addEventListener('click', function() {
+                textLibraryModal.style.display = 'none';
+            });
+            
+            // 关闭模态框（多个关闭按钮）
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    textLibraryModal.style.display = 'none';
+                });
+            });
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', function(event) {
+                if (event.target === textLibraryModal) {
+                    textLibraryModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // 切换随机状态
+        function toggleRandomize() {
+            if (!isRandomizing) {
+                // 开始随机
+                startRandomizing();
+            } else {
+                // 停止随机
+                stopRandomizing();
+            }
+        }
+        
+        // 开始随机跳动
+        function startRandomizing() {
+            if (textLibrary.length === 0) {
+                showNotification('文本库为空，请先添加文本', true);
+                return;
+            }
+            
+            isRandomizing = true;
+            randomButton.textContent = '停！';
+            randomButton.classList.add('stopped');
+            textDisplay.classList.add('jumping');
+            
+            // 快速切换文本（每100毫秒）
+            randomInterval = setInterval(() => {
+                currentTextIndex = Math.floor(Math.random() * textLibrary.length);
+                textDisplay.textContent = textLibrary[currentTextIndex];
+            }, 100);
+        }
+        
+        // 停止随机跳动
+        function stopRandomizing() {
+            isRandomizing = false;
+            clearInterval(randomInterval);
+            randomButton.textContent = '开始随机';
+            randomButton.classList.remove('stopped');
+            textDisplay.classList.remove('jumping');
+            
+            // 确保显示当前选中的文本
+            if (currentTextIndex >= 0 && currentTextIndex < textLibrary.length) {
+                textDisplay.textContent = textLibrary[currentTextIndex];
+            }
+            
+            showNotification(`已停止在: ${textDisplay.textContent}`);
+        }
+        
+        // 复制表格数据到剪贴板
+        function copyTableData() {
+            // 检查是否所有第二列和第三列都输入了"1"
+            let allOnes = true;
+            const inputsCol2 = [];
+            const inputsCol3 = [];
+            
+            fixedRoles.forEach((_, index) => {
+                const input1 = document.getElementById(`role-${index}-col2`);
+                const input2 = document.getElementById(`role-${index}-col3`);
+                
+                inputsCol2.push(input1.value);
+                inputsCol3.push(input2.value);
+                
+                if (input1.value !== "1" || input2.value !== "1") {
+                    allOnes = false;
+                }
+            });
+            
+            // 如果所有第二列和第三列都是"1"，显示文本库管理界面
+            if (allOnes) {
+                textLibraryModal.style.display = 'flex';
+                return;
+            }
+            
+            // 构建要复制的文本（表格格式）
+            let textToCopy = "角色\t第二列信息\t第三列信息\n";
+            
+            fixedRoles.forEach((role, index) => {
+                const input1 = document.getElementById(`role-${index}-col2`).value || '';
+                const input2 = document.getElementById(`role-${index}-col3`).value || '';
+                textToCopy += `${role}\t${input1}\t${input2}\n`;
+            });
+            
+            // 使用现代剪贴板API
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    showNotification('表格数据已复制到剪贴板！可直接粘贴到Excel中');
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    // 备用方法：使用老式方法
+                    const textArea = document.createElement('textarea');
+                    textArea.value = textToCopy;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showNotification('表格数据已复制到剪贴板！可直接粘贴到Excel中');
+                });
+        }
+        
+        // 显示通知消息
+        function showNotification(message, isError = false) {
+            notificationText.textContent = message;
+            
+            if (isError) {
+                notification.classList.add('error');
+                notification.querySelector('i').className = 'fas fa-exclamation-circle';
+            } else {
+                notification.classList.remove('error');
+                notification.querySelector('i').className = 'fas fa-check-circle';
+            }
+            
+            notification.classList.add('show');
+            
+            // 3秒后隐藏通知
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 页面加载完成后初始化游戏
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
